@@ -1,3 +1,7 @@
+#
+# $Header$
+#
+
 package ExtUtils::Depends;
 
 use strict;
@@ -5,6 +9,8 @@ use warnings;
 use Carp;
 use File::Spec;
 use Data::Dumper;
+
+our @VERSION = 0.200;
 
 sub new {
 	my ($class, $name, @deps) = @_;
@@ -36,6 +42,13 @@ sub add_deps {
 		$self->{deps}{$d} = undef
 			unless $self->{deps}{$d};
 	}
+}
+
+sub get_deps {
+	my $self = shift;
+	$self->load_deps; # just in case
+
+	return %{$self->{deps}};
 }
 
 sub set_inc {
@@ -173,13 +186,9 @@ sub load {
 		$instpath = File::Spec->rel2abs ($instpath);
 	}
 
-	#print Dumper(\%{ "$depinstallfiles\::" });
-
 	my @typemaps = map {
 		File::Spec->rel2abs ($_, $instpath)
 	} @{"$depinstallfiles\::typemaps"};
-
-	print Dumper(\@{"$depinstallfiles\::deps"});
 
 	{
 		instpath => $instpath,
@@ -197,14 +206,9 @@ sub load {
 
 sub load_deps {
 	my $self = shift;
-	#print Dumper($self);
 	my @load = grep { not $self->{deps}{$_} } keys %{ $self->{deps} };
-	print Dumper(\@load);
 	foreach my $d (@load) {
-		print "\n===============================================\n"
-		    . "loading $d\n";
 		my $dep = load ($d);
-#		print Dumper($dep);
 		$self->{deps}{$d} = $dep;
 		if ($dep->{deps}) {
 			foreach my $childdep (@{ $dep->{deps} }) {
