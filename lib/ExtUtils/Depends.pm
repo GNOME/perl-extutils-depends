@@ -149,8 +149,6 @@ EOT
 
 	close $file;
 
-#	system "cat $filename";
-
 	# we need to ensure that the file we just created gets put into
 	# the install dir with everything else.
 	#$self->install ($filename);
@@ -212,7 +210,7 @@ sub load_deps {
 		$self->{deps}{$d} = $dep;
 		if ($dep->{deps}) {
 			foreach my $childdep (@{ $dep->{deps} }) {
-				warn("adding $childdep to load"),push @load, $childdep
+				push @load, $childdep
 					unless
 						$self->{deps}{$childdep}
 					or
@@ -296,48 +294,229 @@ sub get_makefile_vars {
 1;
 
 __END__
-#############
-package main;
 
-use Data::Dumper;
-use ExtUtils::PkgConfig;
-use ExtUtils::Depends;
+=head1 NAME
 
-my $real = 0;
-if ($ARGV[-1] eq '-d') {
-	pop @ARGV;
-	$real++;
-}
+ExtUtils::Depends - Easily build XS extensions that depend on XS extensions
 
-my %pkgconfig = ExtUtils::PkgConfig->find ('libgnomecanvas-2.0');
-#my %pkgconfig = ExtUtils::PkgConfig->find ('libgnomeui-2.0');
+=head1 SYNOPSIS
 
-my $dep;
-if ($real) {
-	$dep = new ExtUtils::Depends @ARGV;
-} else {
-	$dep = new NewDepends @ARGV;
-}
+	use ExtUtils::Depends;
+	$package = new ExtUtils::Depends ('pkg::name', 'base::package')
+	# set the flags and libraries to compile and link the module
+	$package->set_inc("-I/opt/blahblah");
+	$package->set_lib("-lmylib");
+	# add a .c and an .xs file to compile
+	$package->add_c('code.c');
+	$package->add_xs('module-code.xs');
+	# add the typemaps to use
+	$package->add_typemaps("typemap");
+	# install some extra data files and headers
+	$package->install (qw/foo.h data.txt/);
+	# save the info
+	$package->save_config('Files.pm');
 
-#print Dumper( $dep );
+	WriteMakefile(
+		'NAME' => 'Mymodule',
+		$package->get_makefile_vars()
+	);
 
-my @xs_files = qw(
-	Foo.xs Bar.xs Baz.xs Q.xs Qu.xs Quu.xs
-);
-my %pm_files = (
-	'Baz.pm' => '$(INST_LIBDIR)/$(FULLEXT).pm',
-	'Q.pm' => '$(INST_LIBDIR)/$(FULLEXT)/Q.pm',
-	'Qu.pm' => '$(INST_LIBDIR)/$(FULLEXT)/Qu.pm',
-	'Quu.pm' => '$(INST_LIBDIR)/$(FULLEXT)/Quu.pm',
-);
+=head1 DESCRIPTION
 
-$dep->set_inc ($pkgconfig{cflags});
-$dep->set_libs ($pkgconfig{libs});
-$dep->add_pm (%pm_files);
-$dep->add_xs (@xs_files);
-$dep->add_typemaps (qw(typemap foo.typemap build/bar.typemap));
+This module tries to make it easy to build Perl extensions that use
+functions and typemaps provided by other perl extensions. This means
+that a perl extension is treated like a shared library that provides
+also a C and an XS interface besides the perl one.
 
-$dep->save_config ('foo.pm');
+This works as long as the base extension is loaded with the RTLD_GLOBAL
+flag (usually done with a 
 
-#print Dumper( $dep );
-print Dumper({$dep->get_makefile_vars})
+	sub dl_load_flags {0x01}
+
+in the main .pm file) if you need to use functions defined in the module.
+
+The basic scheme of operation is to collect information about a module
+in the instance, and then store that data in the Perl library where it
+may be retrieved later.  The object can also reformat this information
+into the data structures required by ExtUtils::MakeMaker's WriteMakefile
+function.
+
+When creating a new Depends object, you give it a name, which is the name
+of the module you are building.   You can also specify the names of modules
+on which this module depends.  These dependencies will be loaded
+automatically, and their typemaps, header files, etc merged with your new
+object's stuff.  When you store the data for your object, the list of
+dependencies are stored with it, so that another module depending on your
+needn't know on exactly which modules yours depends.
+
+For example:
+
+  Gtk2 depends on Glib
+
+  Gnome2::Canvas depends on Gtk2
+
+  ExtUtils::Depends->new ('Gnome2::Canvas', 'Gtk2');
+     this command automatically brings in all the stuff needed
+     for Glib, since Gtk2 depends on it.
+
+
+=head1 METHODS
+
+=over
+
+=item $object = ExtUtils::Depends->new($name, @deps)
+
+Create a new depends object named I<$name>.  Any modules listed in I<@deps>
+(which may be empty) are added as dependencies and their dependency
+information is loaded.  An exception is raised if any dependency information
+cannot be loaded.
+
+=item $depends->add_deps (@deps)
+
+Add modules listed in I<@deps> as dependencies.
+
+=item (hashes) = $depends->get_deps
+
+Fetch information on the dependencies of I<$depends> as a hash of hashes,
+which are dependency information indexed by module name.  See C<load>.
+
+=item $depends->set_inc (@newinc)
+
+Add strings to the includes or cflags variables.
+
+=item $depends->set_libs (@newlibs)
+
+Add strings to the libs (linker flags) variable.
+
+=item $depends->add_pm (%pm_files)
+
+Add files to the hash to be passed through ExtUtils::WriteMakefile's
+PM key.
+
+=item $depends->add_xs (@xs_files)
+
+Add xs files to be compiled.
+
+=item $depends->add_c (@c_files)
+
+Add C files to be compiled.
+
+=item $depends->typemaps (@typemaps)
+
+Add typemap files to be used and installed.
+
+=item $depends->add_headers (list)
+
+No-op, for backward compatibility.
+
+=item $depends->install (@files)
+
+Install I<@files> to the data directory for I<$depends>.
+
+This actually works by adding them to the hash of pm files that gets
+passed through WriteMakefile's PM key.
+
+=item $depends->save_config ($filename)
+
+Save the important information from I<$depends> to I<$filename>, and
+set it up to be installed as I<name>::Install::Files.
+
+Note: the actual value of I<$filename> seems to be irrelevant, but its
+usage is kept for backward compatibility.
+
+=item hash = $depends->get_makefile_vars
+
+Return the information in I<$depends> in a format digestible by
+WriteMakefile.
+
+This sets at least the following keys:
+
+	INC
+	LIBS
+	TYPEMAPS
+	PM
+
+And these if there is data to fill them:
+
+	clean
+	OBJECT
+	XS
+
+=item hashref = ExtUtils::Depends::load (name)
+
+Load and return dependency information for I<name>.  Croaks if no such
+information can be found.  The information is returned as an anonymous
+hash containing these keys:
+
+=over
+
+=item instpath
+
+The absolute path to the data install directory for this module.
+
+=item typemaps
+
+List of absolute pathnames for this module's typemap files.
+
+=item inc
+
+CFLAGS string for this module.
+
+=item libs
+
+LIBS string for this module.
+
+=item deps
+
+List of modules on which this one depends.  This key will not exist when
+loading files created by old versions of ExtUtils::Depends.
+
+=item header
+
+List of header files.  For backwards compatibility, no longer used.
+
+=back
+
+=item $depends->load_deps
+
+Load I<$depends> dependencies, by calling C<load> on each dependency module.
+This is usually done for you, and should only be needed if you want to call
+C<get_deps> after calling C<add_deps> manually.
+
+=back
+
+
+=head1 BUGS
+
+As written, this module expects that RTLD_GLOBAL works on your platform,
+which is not always true, most notably, on win32.  We need to include a
+way to find the actual shared libraries created for extension modules
+so new extensions may be linked explicitly with them.
+
+Version 0.2 discards some of the more esoteric features provided by the
+older versions.  As they were completely undocumented, and this module
+has yet to reach 1.0, this may not exactly be a bug.
+
+This module is tightly coupled to the ExtUtils::MakeMaker architecture.
+
+=head1 SEE ALSO
+
+ExtUtils::MakeMaker.
+
+=head1 AUTHOR
+
+Paolo Molaro <lupus at debian dot org> wrote the original version for
+Gtk-Perl.  muppet <scott at asofyet dot org> rewrote the innards for
+version 0.2, borrowing liberally from Paolo's code.
+
+=head1 MAINTAINER
+
+The Gtk2 project, http://gtk2-perl.sf.net/
+
+=head1 LICENSE
+
+This library is free software; you may redistribute it and/or modify it
+under the same terms as Perl itself.
+
+=cut
+
