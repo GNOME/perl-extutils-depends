@@ -1,8 +1,0 @@
-Makefile.PL
-Changes
-lib/ExtUtils/Depends.pm
-t/01_load.t
-META.yml
-MANIFEST
-.cvsignore
-README
