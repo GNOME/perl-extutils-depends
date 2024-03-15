@@ -218,11 +218,12 @@ SUPPORT
     Patches that implement new features with test cases, and/or test cases
     that exercise existing bugs are always welcome.
 
-    The Gtk-Perl mailing list is at "gtk-perl-list at gnome dot org".
+    The Gtk-Perl support forum is at
+    <https://discourse.gnome.org/tags/c/platform/language-bindings/11/perl>.
 
   Source Code
     The source code to ExtUtils::Depends is available at the Gnome.org Git
-    repo (<https://git.gnome.org/browse/perl-ExtUtils-Depends/>). Create
+    repo (<https://gitlab.gnome.org/GNOME/perl-extutils-depends>). Create
     your own copy of the Git repo with:
 
       git clone git://git.gnome.org/perl-ExtUtils-Depends (Git protocol)
@@ -237,8 +238,7 @@ AUTHOR
     version 0.2, borrowing liberally from Paolo's code.
 
 MAINTAINER
-    The Gtk2 project, <http://gtk2-perl.sf.net>/"gtk-perl-list at gnome dot
-    org".
+    The Gtk2 project, <http://gtk2-perl.sf.net>.
 
 LICENSE
     This library is free software; you may redistribute it and/or modify it
