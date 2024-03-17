@@ -626,7 +626,8 @@ L<https://gitlab.gnome.org/GNOME/perl-extutils-depends/-/issues/>
 Patches that implement new features with test cases, and/or test cases that
 exercise existing bugs are always welcome.
 
-The Gtk-Perl mailing list is at L<gtk-perl-list at gnome dot org>.
+The Gtk-Perl support forum is at
+L<https://discourse.gnome.org/tags/c/platform/language-bindings/11/perl>
 
 =head2 Source Code
 
