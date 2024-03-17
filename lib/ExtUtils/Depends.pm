@@ -616,10 +616,10 @@ L<https://rt.cpan.org/Public/Bug/Report.html?Queue=ExtUtils-Depends> (requires
 PAUSE ID or Bitcard), or by sending an e-mail to
 L<bug-ExtUtils-Depends at rt.cpan.org>.
 
-=item Gnome.org Bugzilla
+=item Gnome.org Bugtracker
 
-Report bugs/feature requests to the 'gnome-perl' product (requires login)
-L<http://bugzilla.gnome.org/enter_bug.cgi?product=gnome-perl>
+Report bugs/feature requests to 'perl-extutils-depends' (requires login)
+L<https://gitlab.gnome.org/GNOME/perl-extutils-depends/-/issues/>
 
 =back
 
@@ -631,7 +631,7 @@ The Gtk-Perl mailing list is at L<gtk-perl-list at gnome dot org>.
 =head2 Source Code
 
 The source code to L<ExtUtils::Depends> is available at the Gnome.org Git repo
-(L<https://git.gnome.org/browse/perl-ExtUtils-Depends/>).  Create your own
+(L<https://gitlab.gnome.org/GNOME/perl-extutils-depends>).  Create your own
 copy of the Git repo with:
 
   git clone git://git.gnome.org/perl-ExtUtils-Depends (Git protocol)
