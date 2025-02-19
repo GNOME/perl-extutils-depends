@@ -1,8 +1,7 @@
-#!/usr/bin/perl
 use strict;
 use warnings;
 
-use Test::More tests => 41;
+use Test::More;
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
@@ -165,3 +164,5 @@ sub test_load {
 }
 test_load (ExtUtils::Depends::load('PSnew'), 'load new scheme');
 test_load (ExtUtils::Depends::load('PSold'), 'load old scheme');
+
+done_testing;

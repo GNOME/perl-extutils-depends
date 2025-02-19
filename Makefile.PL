@@ -41,12 +41,10 @@ my %meta_merge = (
         configure => {
             requires => {%prereqs}, # no direct ref for 5.14 compatibility
         },
-        build => {
-            requires => {
-                'Test::More' => 0,
-            },
-        },
         test => {
+            requires => {
+                'Test::More' => '0.88', # done_testing
+            },
             recommends => {
                 'Test::Number::Delta' => 1.0,
             },
