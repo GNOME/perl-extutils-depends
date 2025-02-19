@@ -8,6 +8,7 @@ README
 t/02_save_load.t
 t/03_deps.t
 t/04_extra_libs.t
+t/05_unc.t
 t/inc/DepTest/DepTest.dll
 t/inc/DepTest/DepTest.lib
 t/inc/DepTest/Install/.keep

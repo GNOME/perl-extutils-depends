@@ -1,5 +1,7 @@
 Revision history for Perl extension ExtUtils::Depends.
 
+    - fix UNC path bug - https://rt.cpan.org/Ticket/Display.html?id=102436
+
 0.8001
     - Remove hack (cf https://rt.cpan.org/Ticket/Display.html?id=45224)
       The hijacking of EUMM's `static_lib` method is now obsolete, as well as

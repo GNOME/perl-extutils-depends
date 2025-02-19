@@ -179,9 +179,8 @@ sub load {
 	#print Dumper(\%INC);
 
 	# effectively $instpath = dirname($INC{$relpath})
-	@pieces = File::Spec->splitdir ($INC{$relpath});
-	pop @pieces;
-	my $instpath = File::Spec->catdir (@pieces);
+	my ($vol,$dirs,$file) = File::Spec->splitpath($INC{$relpath});
+	my $instpath = File::Spec->catpath($vol,$dirs,'');
 
 	no strict;
 
