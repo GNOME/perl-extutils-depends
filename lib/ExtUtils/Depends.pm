@@ -247,16 +247,14 @@ sub get_makefile_vars {
 	# first, ensure they are completely loaded.
 	$self->load_deps;
 
-	##my @defbits = map { split } @{ $self->{defines} };
-	my @incbits = map { split } @{ $self->{inc} };
-	my @libsbits = split /\s+/, $self->{libs};
+	my @incbits = @{ $self->{inc} };
+	my @libsbits = $self->{libs};
 	my @typemaps = @{ $self->{typemaps} };
 	foreach my $d (sort keys %{ $self->{deps} }) {
 		my $dep = $self->{deps}{$d};
-		#push @defbits, @{ $dep->{defines} };
 		push @incbits, @{ $dep->{defines} } if $dep->{defines};
-		push @incbits, split /\s+/, $dep->{inc} if $dep->{inc};
-		push @libsbits, split /\s+/, $dep->{libs} if $dep->{libs};
+		push @incbits, $dep->{inc} if $dep->{inc};
+		push @libsbits, $dep->{libs} if $dep->{libs};
 		push @typemaps, @{ $dep->{typemaps} } if $dep->{typemaps};
 	}
 

@@ -20,4 +20,10 @@ my $hash = ExtUtils::Depends::load('FakeUNC');
 my $s = '[\\/]';
 like $hash->{instpath}, qr/^${s}${s}server${s}share${s}file${s}FakeUNC${s}Install${s}?$/, 'preserves UNC server';
 
+my @fakes = qw(FakeSpace1 FakeSpace2);
+make_fake($_, 'C:/program files/perl/lib') for @fakes;
+my $eud = ExtUtils::Depends->new(qw(Mymod), @fakes);
+$hash = {$eud->get_makefile_vars};
+is $hash->{INC}, '-I"C:/program files/perl/lib/FakeSpace1/Install/"  -I"C:/program files/perl/lib/FakeSpace2/Install/" ', 'space-quoted stuff no lose parts';
+
 done_testing;
