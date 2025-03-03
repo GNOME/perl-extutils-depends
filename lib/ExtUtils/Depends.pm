@@ -367,6 +367,8 @@ sub find_extra_libs {
 	return @found_libs;
 }
 
+1;
+
 __END__
 
 =head1 NAME
