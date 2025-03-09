@@ -44,8 +44,7 @@ sub new {
 sub add_deps {
 	my $self = shift;
 	foreach my $d (@_) {
-		$self->{deps}{$d} = undef
-			unless $self->{deps}{$d};
+		$self->{deps}{$d} ||= undef;
 	}
 }
 
@@ -191,14 +190,13 @@ sub load {
 		$instpath = File::Spec->rel2abs ($instpath);
 	}
 
-	my (@typemaps, $inc, $libs, @deps);
-
 	# this will not exist when loading files from old versions
 	# of ExtUtils::Depends.
-	@deps = eval { $depinstallfiles->deps };
+	my @deps = eval { $depinstallfiles->deps };
 	@deps = @{"$depinstallfiles\::deps"}
 		if $@ and exists ${"$depinstallfiles\::"}{deps};
 
+	my (@typemaps, $inc, $libs);
 	my $inline = eval { $depinstallfiles->Inline('C') };
 	if (!$@) {
 		$inc = $inline->{INC} || '';
@@ -226,7 +224,8 @@ sub load_deps {
 	my $self = shift;
 	my @load = grep !$self->{deps}{$_}, keys %{ $self->{deps} };
 	my %in_load; @in_load{@load} = ();
-	foreach my $d (@load) {
+	while (@load) {
+		my $d = shift @load;
 		$self->{deps}{$d} = my $dep = load($d);
 		my @new_deps = grep !($self->{deps}{$_} || exists $in_load{$_}),
 			@{ $dep->{deps} || [] };
