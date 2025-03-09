@@ -163,4 +163,9 @@ sub test_load {
 test_load(ExtUtils::Depends::load('PSnew'), qr/PSold/, qr/${INC_FRAG}new/, 'load new scheme');
 test_load(ExtUtils::Depends::load('PSold'), undef, qr/${INC_FRAG}old/, 'load old scheme');
 
+$dep_info = ExtUtils::Depends->new('UseTest', 'PSnew');
+my %mkv = $dep_info->get_makefile_vars;
+like $mkv{INC}, qr/${INC_FRAG}new/, 'get_makefile_vars has immediate-dep INC';
+like $mkv{INC}, qr/${INC_FRAG}old/, 'get_makefile_vars has transitive-dep INC';
+
 done_testing;
