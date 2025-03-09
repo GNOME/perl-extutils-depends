@@ -19,6 +19,7 @@ $dep_info->save_config(catfile $tmp_inc, qw(DepTest Install Files.pm));
 
 # --------------------------------------------------------------------------- #
 
+push @INC, catdir(qw(t inc));
 my $use_info = ExtUtils::Depends->new('UseTest', 'DepTest');
 my %vars = $use_info->get_makefile_vars;
 
@@ -27,7 +28,7 @@ my $libname = 'DepTest';
 require DynaLoader;
 $libname = DynaLoader::mod2fname([$libname]) if defined &DynaLoader::mod2fname;
 
-like ($vars{LIBS}, qr/$libname/);
+like $vars{LDFROM}, qr/$libname/ or diag explain \%vars;
 
 # --------------------------------------------------------------------------- #
 

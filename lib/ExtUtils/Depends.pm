@@ -280,11 +280,10 @@ sub get_makefile_vars {
 
 	my %vars = (
 		INC => join (' ', uniquify @incbits),
-		LIBS => join (' ', uniquify $self->find_extra_libs, @libsbits),
-		TYPEMAPS => [@typemaps],
+		LIBS => join (' ', uniquify @libsbits),
+		LDFROM => join (' ', '$(OBJECT)', map _quote_if_space($_), find_extra_libs($self->{deps}, \@INC)),
+		TYPEMAPS => \@typemaps,
 	);
-
-	$self->build_dll_lib(\%vars) if $^O =~ /MSWin32/;
 
 	# we don't want to provide these if there is no data in them;
 	# that way, the caller can still get default behavior out of
@@ -301,67 +300,34 @@ sub get_makefile_vars {
 	%vars;
 }
 
-sub build_dll_lib {
-	my ($self, $vars) = @_;
-	$vars->{macro} ||= {};
-	$vars->{macro}{'INST_DYNAMIC_LIB'} =
-		'$(INST_ARCHAUTODIR)/$(DLBASE)$(LIB_EXT)';
-}
-
 # Search for extra library files to link against on Windows (either native
 # Windows library # files, or Cygwin library files)
 # NOTE: not meant to be called publicly, so no POD documentation
+# see https://rt.cpan.org/Ticket/Display.html?id=45224 for discussion
+my %exts; BEGIN { %exts = (
+  MSWin32 => [ ".lib", ".$Config{dlext}", $Config{_a} ],
+  cygwin => [ '.dll' ],
+  android => [ ".$Config{dlext}" ],
+); }
 sub find_extra_libs {
-	my $self = shift;
-
-	my %mappers = (
-		MSWin32 => sub { $_[0] . '\.(?:lib|a)' },
-		cygwin	=> sub { $_[0] . '\.dll'},
-		android => sub { $_[0] . '\.' . $Config{dlext} },
-	);
-	my $mapper = $mappers{$^O};
-	return () unless defined $mapper;
-
-	my @found_libs = ();
-	foreach my $name (keys %{ $self->{deps} }) {
-		(my $stem = $name) =~ s/^.*:://;
-		if ( defined &DynaLoader::mod2fname ) {
-			 my @parts = split /::/, $name;
-			 $stem = DynaLoader::mod2fname([@parts]);
-		}
-		my $lib = $mapper->($stem);
-		my $pattern = qr/$lib$/;
-
-		my $matching_dir;
-		my $matching_file;
-		find (sub {
-			if ((not $matching_file) && /$pattern/) {;
-				$matching_dir = $File::Find::dir;
-				$matching_file = $File::Find::name;
-			}
-		}, map { -d $_ ? ($_) : () } @INC); # only extant dirs
-
-		if ($matching_file && -f $matching_file) {
-			push @found_libs,
-				'-L' . _quote_if_space($matching_dir),
-				'-l' . $stem;
-			# Android's linker ignores the RTLD_GLOBAL flag
-			# and loads everything as if under RTLD_LOCAL.
-			# What this means in practice is that modules need
-			# to explicitly link to their dependencies,
-			# because otherwise they won't be able to locate any
-			# functions they define.
-			# We use the -l:foo.so flag to indicate that the
-			# actual library name to look for is foo.so, not
-			# libfoo.so
-			if ( $^O eq 'android' ) {
-				$found_libs[-1] = "-l:$stem.$Config{dlext}";
-			}
-			next;
-		}
-	}
-
-	return @found_libs;
+  my ($deps, $search) = @_;
+  return () if !keys %$deps;
+  return () unless my $exts = $exts{$^O};
+  require File::Spec::Functions;
+  my @found_libs = ();
+  DEP: foreach my $name (keys %$deps) {
+    my @parts = ('auto', split /::/, $name);
+    my $stem = defined &DynaLoader::mod2fname
+      ? DynaLoader::mod2fname(\@parts) : $parts[-1];
+    my @bases = map $stem.$_, @$exts;
+    for my $dir (grep -d, @$search) { # only extant dirs
+      my ($found) = grep -f, map File::Spec::Functions::catfile($dir, @parts, $_), @bases;
+      next if !defined $found;
+      push @found_libs, $found;
+      next DEP;
+    }
+  }
+  @found_libs;
 }
 
 1;
@@ -401,12 +367,17 @@ functions and typemaps provided by other perl extensions. This means
 that a perl extension is treated like a shared library that provides
 also a C and an XS interface besides the perl one.
 
-This works as long as the base extension is loaded with the RTLD_GLOBAL
-flag (usually done with a
+This works as long as the base (or "producing") extension is loaded with
+the C<RTLD_GLOBAL> flag (usually done with a
 
 	sub dl_load_flags {0x01}
 
-in the main .pm file) if you need to use functions defined in the module.
+in the main F<.pm> file) if you need to use functions defined in the module.
+That "producing" extension will also need to tell L<ExtUtils::MakeMaker>
+the specific functions to export, with arguments to C<WriteMakefile> like:
+
+  FUNCLIST => [qw(function_name)],
+  DL_FUNCS => { 'Extension::Name' => [] },
 
 The basic scheme of operation is to collect information about a module
 in the instance, and then store that data in the Perl library where it
