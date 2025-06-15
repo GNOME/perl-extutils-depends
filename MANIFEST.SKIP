@@ -7,3 +7,4 @@
 ^MANIFEST\.bak$
 ^MYMETA.*
 \.sw.$
+^xt/
